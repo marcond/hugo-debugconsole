@@ -8,15 +8,21 @@ This partial uses [Apache 2 License](https://github.com/slatedocs/slate/blob/mas
 
 ![Screenshot DebugConsole](https://raw.githubusercontent.com/marcond/hugo-debugconsole/master/images/screenshot.png)
 
-## Use
+## How it works
 
-**TODO:** Document use by cloning below `themes`.
-To use the partial, you should clone this repository just below `themes` and do something like this:
-```toml
-theme = ["awesome-theme", "hugo-debugconsole"]
+**TODO:** Show the partial.
+
+```go
+  {{ partial "debug.html" . }}
 ```
 
-**TODO:** Document use as Hugo Module:
+## How to use
+
+You can use DebugConsole in two ways: as a Hugo Module or cloning the repository under `themes` directory. Actually there's a third way, of course: you can just download the files under `layouts/partials` and use them directly on your Hugo site (usually placing the files also under `layouts/partials`).
+
+### Install as Hugo Module:
+
+First, add the following module import to your Hugo config file, like `config.toml`:
 
 ```toml
 [module]
@@ -24,5 +30,13 @@ theme = ["awesome-theme", "hugo-debugconsole"]
     path = "github.com/marcond/hugo-debugconsole"
     disabled = false
 ```
+Then start `hugo serve` as usual. If it fails issuing `Error: module "github.com/marcond/hugo-debugconsole" not found`, this indicates that you don't have Hugo Modules configured yet on your project. To activate this feature, run `hugo mod init your-site` inside your project root (cite source/tutorial). After that you will be able to start Hugo normally.
 
-**Note:** Note something here.
+**Note:** To be able to use Hugo Modules, you need a fairly updated Go (minimum 1.12) and Hugo (minimum 0.56). Using latest versions is recommended.
+
+### Install cloning repository under `themes`
+
+Clone this repository to `your-site/themes/hugo-debugconsole` and update the `theme` variable on your Hugo config file, for instance `config.toml`:
+```toml
+theme = ["awesome-theme", "hugo-debugconsole"]
+```
