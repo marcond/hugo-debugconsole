@@ -6,9 +6,13 @@ I created this plugin inspired by `debug.Dump` ([yes, such thing exists!](https:
 
 This partial uses [Apache 2 License](https://github.com/slatedocs/slate/blob/master/LICENSE), so it can be embedded with peace of mind ;)
 
+## How it works
+
+This is what you get using DebugConsole:
+
 ![Screenshot DebugConsole](https://raw.githubusercontent.com/marcond/hugo-debugconsole/master/images/screenshot.png)
 
-## How it works
+It uses a feature called Partials, which are code snippets that can be called by name, from layout files.
 
 **TODO:** Show the partial.
 
