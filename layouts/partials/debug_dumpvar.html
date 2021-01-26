@@ -1,0 +1,98 @@
+
+<!-- Initialize vars and preprocess some conditionals -->
+{{ $label        := (printf "%s" .label) }}
+{{ $symbol       := .symbol }}
+{{ $level        := .level }}
+{{ $type         := (printf "%T" .symbol) }}
+{{ $typeIsBool   := (eq "bool" $type) }}
+{{ $typeIsNumber := (or (eq "int" $type) (eq "int64" $type) (eq "float64" $type)) }}
+{{ $typeIsString := (findRE "^(string|template\\.(CSS|HTML|HTMLAttr|JS|JSStr|URL))$" $type) }}
+{{ $typeIsTime   := (eq "time.Time" $type) }}
+{{ $typeIsSlice  := (findRE "^([[][]]|.*TaxonomyList|output\\.Formats|resource\\.Resources|.*navigation\\.Menu$|\\*?hugolib\\.Pages$|hugolib\\.OrderedTaxonomy$|hugolib\\.WeightedPages)" $type) }} <!-- match ^[] -->
+{{ $typeIsMap    := (findRE "^(map[[].+[]]|.*SiteSocial|.*navigation\\.Menus$|hugolib\\.AuthorList|hugolib\\.Taxonomy|maps\\.Params)" $type) }} <!-- match ^map[*] -->
+{{ $typeIsPage   := (findRE "^(\\*hugolib\\.Page|.*hugolib\\.pageState)" $type) }}
+<!-- TODO: reflect.IsMap, reflect.typeIsSlice etc -->
+
+<!-- We always return a dictionary -->
+{{ $value := dict }}
+
+<!-- Simple types -->
+{{ if (eq "bool" $type) }}
+    {{ $value = dict .label .symbol }}
+{{ else if $typeIsNumber }}
+    {{ $value = dict .label .symbol }}
+{{ else if $typeIsString }}
+    {{ $value = (dict .label (printf "%v" .symbol | htmlUnescape)) }}
+{{ else }}
+
+    <!-- We synthesize types by setting custom names and symbols -->
+    {{ $var_names := slice }}
+    {{ $var_symbols := slice }}
+
+    <!-- Artificial types -->
+    {{ if eq $label ".Hugo"}}
+        {{ $hugo_version := printf "%v" hugo.Version }}
+        {{ $var_names   = (slice "hugo.Version" "hugo.IsProduction" "hugo.BuildDate" "hugo.Generator" "hugo.CommitHash" "hugo.Environment") }}
+        {{ $var_symbols = (slice $hugo_version   hugo.IsProduction   hugo.BuildDate   hugo.Generator   hugo.CommitHash   hugo.Environment ) }}
+    {{ else if eq $label ".IsMultiLingual" }}
+        {{ with $symbol }}
+            {{ $var_names   = (slice ".IsMultiLingual"     ".Site.Language.Lang" ".Site.Language.LanguageName" ".Site.Language.Weight" ".Site.Language" ".Site.LanguageCode" ".Site.LanguagePrefix" ".Site.Languages" ) }}
+            {{ $var_symbols = (slice  .Site.IsMultiLingual  .Site.Language.Lang   .Site.Language.LanguageName   .Site.Language.Weight   .Site.Language   .Site.LanguageCode   .Site.LanguagePrefix   .Site.Languages ) }}
+            {{ $value = merge $value (dict "__inline__" "Hugo is running in Multilingual Mode") }}
+        {{ end }}
+    {{ else if $typeIsPage }}
+        {{ with $symbol }}
+            {{ $var_names   = (slice "Name" "Title" "ResourceType" "Kind" "Section" "Draft" "Type" "Layout" "Permalink" "RelPermalink" "Data") }}
+            {{ $var_symbols = (slice .Name  .Title  .ResourceType  .Kind  .Section  .Draft  .Type  .Layout  .Permalink  .RelPermalink  .Data ) }}
+        {{ end }}
+    {{ else if eq "page.Pages" $type }}
+        {{ range $symbol }}
+            {{ $value = merge $value (partial "debug_dumpvar.html" (dict "label" "page#Pages" "symbol" . "level" (add $level 1))) }}
+        {{ end }}
+    {{ else if eq "*langs.Language" $type }}
+        {{ with $symbol }}
+            {{ $var_names   = (slice "Lang" "LanguageName" "LanguageDirection" "Title" "Weight" "Disabled" "ContentDir" ) }}
+            {{ $var_symbols = (slice .Lang  .LanguageName  .LanguageDirection  .Title  .Weight  .Disabled  .ContentDir ) }}
+        {{ end }}
+
+    <!-- Slice -->
+    {{ else if $typeIsSlice }}
+        {{ $value = (dict (printf "%s[]" $label) (printf "%#v" $symbol)) }}
+
+    <!-- Map -->
+    {{ else if $typeIsMap }}
+        {{ warnf "MAP: %v is map" $label }}
+        {{ range $k, $v := $symbol }}
+            {{ warnf "k=%v v=%v" $k $v }}
+            {{ $var_names = $var_names | append $k }}
+            {{ $var_symbols = $var_symbols | append $v }}
+        {{ end }}
+
+    <!-- Unknown -->
+    {{ else }}
+        {{ $text := (slice "The quick brown fox" "Jumped over" "The lazy dogs") }}
+        {{ $value = (dict $label (dict "Unhandled type" (printf "%T" $symbol) "Value" (printf "%#v" $symbol))) }}
+    {{ end }}
+
+    <!-- Check if we need to build a dictionary -->
+    {{ if gt (len $var_names) 0 }}
+        {{ $step := 0 }}
+        {{ $new_dict := dict }}
+        {{ range $i, $var_name := $var_names }}
+            {{ $var := (index $var_symbols $i) }}
+            {{ $var_type := printf "%T" $var }}
+            {{ $var_label := printf "%s (%s)" $var_name $var_type }}
+            {{ $new_dict = merge $new_dict (partial "debug_dumpvar.html" (dict "label" $var_label "symbol" $var "level" (add $level 1))) }}
+            {{ $step = add $step 1 }}
+        {{ end }}
+        {{ if gt $level 0 }}
+            {{ $value = merge $value (dict $label $new_dict) }}
+        {{ else }}
+            <!-- For level 0 the label-dict pair is filled by the caller -->
+            {{ $value = merge $value $new_dict }}
+        {{ end }}
+    {{ end }}
+
+{{ end }}
+
+{{ return $value }}

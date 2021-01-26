@@ -1,0 +1,33 @@
+{{ $var_names := slice }}
+{{ $var_symbols := slice }}
+
+<!-- When Multilingual we output useful i18n info -->
+{{ if $.Site.IsMultiLingual }}
+    {{ $var_names   = $var_names   | append ".IsMultiLingual" }}
+    {{ $var_symbols = $var_symbols | append . }}
+{{ end }}
+
+<!-- .Hugo is synthetic, that's why it's an empty slice here -->
+{{ $var_names   = $var_names   | append ".Page" ".Site.Params"  ".Hugo" }}
+{{ $var_symbols = $var_symbols | append  .Page   .Site.Params   (slice) }}
+
+<!-- Iterate over the symbols we'll output to Javascript Console -->
+{{ $js_code := "" }}
+{{ range $i, $var_name := $var_names }}
+    {{ $debug := partial "debug_dumpvar.html" (dict "label" $var_name "symbol" (index $var_symbols $i) "level" 0) }}
+    {{ $inline := "" }}
+    {{ if isset $debug "__inline__" }}
+        {{ $inline = index $debug "__inline__" }}
+        {{ $copy := dict }}
+        {{ range $k,$v := $debug }}
+            {{ if (ne $k "__inline__") }}
+                {{ $copy = merge $copy (dict $k $v) }}
+            {{ end }}
+        {{ end }}
+        {{ $debug = $copy }}
+    {{ end }}
+    {{ $js_code = (printf "%sconsole.log ('%s: %s\\n%%o',{__proto__:null,%s);\n" $js_code $var_name $inline (substr ($debug | jsonify) 1)) }}
+{{ end }}
+
+<!-- Return the js code and force naked objects -->
+{{ return replace $js_code ":{" ":{__proto__:null," }}

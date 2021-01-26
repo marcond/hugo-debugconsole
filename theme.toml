@@ -1,0 +1,13 @@
+name = "DebugConsole'"
+license = "Apache-2.0"
+licenselink = "https://github.com/marcond/hugo-debugconsole/blob/main/LICENSE"
+description = "Make relevant Hugo debug information available on browser console."
+homepage = "https://github.com/marcond/hugo-debugconsole"
+tags = ["Hugo", "Development", "Debug", "Tools"]
+features = ["Debug"]
+min_version = "0.55.0"
+
+[author]
+  name = "Marcond Marchi"
+  homepage = "https://github.com/marcond"
+
