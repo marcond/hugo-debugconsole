@@ -8,10 +8,7 @@
 {{ $typeIsNumber := (or (eq "int" $type) (eq "int64" $type) (eq "float64" $type)) }}
 {{ $typeIsString := (findRE "^(string|template\\.(CSS|HTML|HTMLAttr|JS|JSStr|URL))$" $type) }}
 {{ $typeIsTime   := (eq "time.Time" $type) }}
-{{ $typeIsSlice  := (findRE "^([[][]]|.*TaxonomyList|output\\.Formats|resource\\.Resources|.*navigation\\.Menu$|\\*?hugolib\\.Pages$|hugolib\\.OrderedTaxonomy$|hugolib\\.WeightedPages)" $type) }} <!-- match ^[] -->
-{{ $typeIsMap    := (findRE "^(map[[].+[]]|.*SiteSocial|.*navigation\\.Menus$|hugolib\\.AuthorList|hugolib\\.Taxonomy|maps\\.Params)" $type) }} <!-- match ^map[*] -->
 {{ $typeIsPage   := (findRE "^(\\*hugolib\\.Page|.*hugolib\\.pageState)" $type) }}
-<!-- TODO: reflect.IsMap, reflect.typeIsSlice etc -->
 
 <!-- We always return a dictionary -->
 {{ $value := dict }}
@@ -54,24 +51,32 @@
             {{ $var_names   = (slice "Lang" "LanguageName" "LanguageDirection" "Title" "Weight" "Disabled" "ContentDir" ) }}
             {{ $var_symbols = (slice .Lang  .LanguageName  .LanguageDirection  .Title  .Weight  .Disabled  .ContentDir ) }}
         {{ end }}
+    {{/* else if (or (eq "*hugolib.fileInfo" $type) (eq "page.zeroFile" $type)) */}}
+    {{ else if eq "*hugolib.fileInfo" $type }}
+        {{ with $symbol }}
+            {{ warnf "TYPE: %s" $type }}
+            {{ $var_names   = (slice "Path" "LogicalName" "TranslationBaseName" "ContentBaseName" "BaseFileName" "Ext" "Lang" "Dir" "UniqueID" ) }}
+            {{ $var_symbols = (slice .Path  .LogicalName  .TranslationBaseName  .ContentBaseName  .BaseFileName  .Ext  .Lang  .Dir  .UniqueID ) }}
+        {{ end }}
+    {{ else if eq "page.zeroFile" $type }}
+        {{ $value = merge $value (dict "__inline__" "Empty file (page.zeroFile)") }}
 
     <!-- Slice -->
-    {{ else if $typeIsSlice }}
+    {{ else if reflect.IsSlice $symbol }}
+        {{ warnf "IS SLICE %s" $type }}
         {{ $value = (dict (printf "%s[]" $label) (printf "%#v" $symbol)) }}
 
     <!-- Map -->
-    {{ else if $typeIsMap }}
-        {{ warnf "MAP: %v is map" $label }}
+    {{ else if reflect.IsMap $symbol }}
+        {{ warnf "IS MAP %s" $type }}
         {{ range $k, $v := $symbol }}
-            {{ warnf "k=%v v=%v" $k $v }}
             {{ $var_names = $var_names | append $k }}
             {{ $var_symbols = $var_symbols | append $v }}
         {{ end }}
 
     <!-- Unknown -->
     {{ else }}
-        {{ $text := (slice "The quick brown fox" "Jumped over" "The lazy dogs") }}
-        {{ $value = (dict $label (dict "Unhandled type" (printf "%T" $symbol) "Value" (printf "%#v" $symbol))) }}
+        {{ $value = (dict $label (dict "Unhandled type" $type "Value" (printf "%#v" $symbol))) }}
     {{ end }}
 
     <!-- Check if we need to build a dictionary -->

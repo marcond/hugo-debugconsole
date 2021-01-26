@@ -8,8 +8,8 @@
 {{ end }}
 
 <!-- .Hugo is synthetic, that's why it's an empty slice here -->
-{{ $var_names   = $var_names   | append ".Page" ".Site.Params"  ".Hugo" }}
-{{ $var_symbols = $var_symbols | append  .Page   .Site.Params   (slice) }}
+{{ $var_names   = $var_names   | append ".Page" ".File" ".Site.Params"  ".Hugo" }}
+{{ $var_symbols = $var_symbols | append  .Page   .File   .Site.Params   (slice) }}
 
 <!-- Iterate over the symbols we'll output to Javascript Console -->
 {{ $js_code := "" }}
@@ -26,7 +26,11 @@
         {{ end }}
         {{ $debug = $copy }}
     {{ end }}
-    {{ $js_code = (printf "%sconsole.log ('%s: %s\\n%%o',{__proto__:null,%s);\n" $js_code $var_name $inline (substr ($debug | jsonify) 1)) }}
+    {{ if $debug }}
+        {{ $js_code = (printf "%sconsole.log ('%s: %s\\n%%o',{__proto__:null,%s);\n" $js_code $var_name $inline (substr ($debug | jsonify) 1)) }}
+    {{ else }}
+        {{ $js_code = (printf "%sconsole.log ('%s: %s');\n" $js_code $var_name $inline) }}
+    {{ end }}
 {{ end }}
 
 <!-- Return the js code and force naked objects -->
