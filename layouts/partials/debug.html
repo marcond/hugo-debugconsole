@@ -2,3 +2,4 @@
 {{- $js_code := partial "debug_dumpjs.html" . -}}
 {{- $vars := $js_code | resources.FromString $debug_output_file -}}
 <script type="text/javascript" src="{{ $vars.Permalink }}"></script>
+{{- "" -}}
